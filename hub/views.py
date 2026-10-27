@@ -163,12 +163,3 @@ def api_search(request):
     q = request.GET.get("q", "")
     return JsonResponse({"results": [{"title": p.title, "url": p.get_absolute_url(), "score": s,
                                       "board": p.board, "summary": p.summary} for s, p in ai.search(q, 6)]})
-
-
-def api_projects(request):
-    """Public JSON API: GET /api/projects/"""
-    data = [{"title": p.title, "slug": p.slug, "board": p.board, "category": p.category.name,
-             "difficulty": p.difficulty, "summary": p.summary, "tags": p.tag_list,
-             "youtube_id": p.youtube_id, "url": p.get_absolute_url()}
-            for p in Project.objects.select_related("category")]
-    return JsonResponse({"count": len(data), "projects": data})

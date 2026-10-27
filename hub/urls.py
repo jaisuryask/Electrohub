@@ -9,7 +9,6 @@ urlpatterns = [
     path("projects/<slug:slug>/download/", views.download_bundle, name="bundle"),
     path("code/<int:pk>/download/", views.download_code, name="download_code"),
     path("ai-lab/", views.ai_lab, name="ailab"),
-    path("api/projects/", views.api_projects, name="api_projects"),
     path("api/search/", views.api_search, name="api_search"),
     path("api/ai/chat/", views.api_chat, name="api_chat"),
     path("api/ai/recommend/", views.api_recommend, name="api_recommend"),
