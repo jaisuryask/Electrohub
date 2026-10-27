@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: electrolab
+    runtime: python
+    plan: free
+    buildCommand: ./build.sh
+    startCommand: gunicorn electrolab.wsgi
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
