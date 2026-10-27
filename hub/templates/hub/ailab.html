@@ -1,0 +1,44 @@
+{% extends "hub/base.html" %}
+{% block title %}AI Lab — ElectroLab{% endblock %}
+{% block content %}
+<section class="wrap sec">
+  <span class="eyebrow">AI Lab</span>
+  <h1 class="h1s">Tools that think like an engineer</h1>
+  <p class="lead">{% if AI_LIVE %}Powered by a free AI model (auto-fallback to the built-in engine), grounded in every ElectroLab project.{% else %}Running on the built-in local engine (TF-IDF retrieval + expert rules). {% endif %}</p>
+
+  <div class="two lab">
+    <div class="box">
+      <h3>🧩 Part Finder — “What can I build?”</h3>
+      <p class="muted">List what you own (comma separated).</p>
+      <textarea id="rcText" rows="3" placeholder="ESP32, DHT22, breadboard, jumper wires, 10k resistor, LED"></textarea>
+      <button class="btn primary" id="rcGo">Find projects</button>
+      <div id="rcOut" class="out"></div>
+    </div>
+    <div class="box">
+      <h3>🩺 Troubleshooter</h3>
+      <p class="muted">Describe the symptom in your own words.</p>
+      <select id="tsProj" aria-label="Project"><option value="">General (no project)</option>
+        {% for p in projects %}<option value="{{ p.slug }}">{{ p.title }}</option>{% endfor %}</select>
+      <textarea id="tsText" rows="3" placeholder="e.g. DHT22 shows nan, or relay turns on when it should be off"></textarea>
+      <button class="btn primary" id="tsGo">Diagnose</button>
+      <div id="tsOut" class="out"></div>
+    </div>
+  </div>
+
+  <div class="two lab">
+    <div class="box">
+      <h3>✨ Semantic search</h3>
+      <p class="muted">Search by what you want to achieve.</p>
+      <input id="ssText" placeholder="a gadget that warns me when something is close">
+      <div id="ssOut" class="out"></div>
+    </div>
+    <div class="box">
+      <h3>🤖 Project assistant</h3>
+      <p class="muted">Available on every page — tap the green button, bottom-right.</p>
+      <button class="btn" id="openChat">Open assistant</button>
+      <h3 class="mt">🔍 Code explainer</h3>
+      <p class="muted">Open any project → Code tab → “Explain with AI”.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

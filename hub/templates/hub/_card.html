@@ -1,0 +1,14 @@
+<a class="card" href="{{ p.get_absolute_url }}">
+  <div class="thumb">
+    {% if p.thumbnail %}<img src="{{ p.thumbnail }}" alt="{{ p.title }}" loading="lazy">{% endif %}
+    {% if p.youtube_id %}<span class="play">▶ Video</span>{% endif %}
+    <span class="board">{{ p.board }}</span>
+    {% if p.score %}<span class="match">{{ p.score }}% match</span>{% endif %}
+  </div>
+  <div class="card-b">
+    <div class="meta"><span class="dot {{ p.difficulty }}"></span>{{ p.get_difficulty_display }} · {{ p.build_minutes }} min · ~${{ p.cost_usd }}</div>
+    <h3>{{ p.title }}</h3>
+    <p>{{ p.summary }}</p>
+    <div class="tags">{% for t in p.tag_list|slice:":4" %}<span>{{ t }}</span>{% endfor %}</div>
+  </div>
+</a>

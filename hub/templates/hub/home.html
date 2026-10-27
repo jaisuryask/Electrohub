@@ -1,0 +1,65 @@
+{% extends "hub/base.html" %}
+{% block content %}
+<section class="hero">
+  <div class="wrap hero-in">
+    <div>
+      <span class="eyebrow">Embedded · IoT · Open hardware</span>
+      <h1>Build real electronics.<br><span class="grad">With an AI mentor beside you.</span></h1>
+      <p class="lead">Wiring diagrams, copy-ready code, step-by-step guides and video walkthroughs for ESP32, Arduino and Raspberry Pi Pico projects.</p>
+      <form class="hero-search" action="{% url 'projects' %}">
+        <input name="q" placeholder="What do you want to build? e.g. “camera that detects motion”" aria-label="Search">
+        <button class="btn primary">Find projects</button>
+      </form>
+      <div class="stats">
+        <div><b>{{ stats.projects }}</b><span>projects</span></div>
+        <div><b>{{ stats.videos }}</b><span>video guides</span></div>
+        <div><b>{{ stats.files }}</b><span>code files</span></div>
+        <div><b>5</b><span>AI tools</span></div>
+      </div>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <svg viewBox="0 0 420 320" class="pcb">
+        <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#10b981"/><stop offset="1" stop-color="#22d3ee"/></linearGradient></defs>
+        <rect x="70" y="60" width="280" height="200" rx="18" fill="#0f1a2e" stroke="url(#g)" stroke-width="2"/>
+        <rect x="150" y="110" width="120" height="100" rx="8" fill="#16243f" stroke="#334a73"/>
+        <text x="210" y="165" text-anchor="middle" fill="#7dd3fc" font-family="JetBrains Mono" font-size="14">ESP32</text>
+        <g stroke="url(#g)" stroke-width="2" fill="none" class="traces">
+          <path d="M150 130H100V90H30"/><path d="M150 160H90V160H30"/><path d="M150 190H100V230H30"/>
+          <path d="M270 130H320V90H390"/><path d="M270 160H330H390"/><path d="M270 190H320V230H390"/>
+        </g>
+        <g fill="#10b981"><circle cx="30" cy="90" r="6"/><circle cx="30" cy="160" r="6"/><circle cx="30" cy="230" r="6"/>
+        <circle cx="390" cy="90" r="6"/><circle cx="390" cy="160" r="6"/><circle cx="390" cy="230" r="6"/></g>
+        <circle class="blink" cx="320" cy="82" r="5" fill="#facc15"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="wrap sec">
+  <div class="sec-h"><h2>Browse by category</h2></div>
+  <div class="cats">
+    {% for c in categories %}<a class="cat" href="{% url 'projects' %}?category={{ c.slug }}"><span>{{ c.icon }}</span><b>{{ c.name }}</b><small>{{ c.blurb }}</small></a>{% endfor %}
+  </div>
+</section>
+
+<section class="wrap sec">
+  <div class="sec-h"><h2>Featured builds</h2><a href="{% url 'projects' %}">View all →</a></div>
+  <div class="grid">{% for p in featured %}{% include "hub/_card.html" %}{% endfor %}</div>
+</section>
+
+<section class="wrap sec">
+  <div class="sec-h"><h2>Latest projects</h2></div>
+  <div class="grid">{% for p in latest %}{% include "hub/_card.html" %}{% endfor %}</div>
+</section>
+
+<section class="wrap sec">
+  <div class="sec-h"><h2>Your AI toolkit</h2><a href="{% url 'ailab' %}">Open AI Lab →</a></div>
+  <div class="feat">
+    <div><h3>🤖 Project Assistant</h3><p>Ask anything about wiring, parts or code — answers are grounded in the actual project.</p></div>
+    <div><h3>🧩 Part Finder</h3><p>List the components in your drawer; AI ranks what you can build today and what's missing.</p></div>
+    <div><h3>🔍 Code Explainer</h3><p>One click turns any sketch into a line-by-line walkthrough.</p></div>
+    <div><h3>🩺 Troubleshooter</h3><p>Describe the fault. Get ranked causes and tests to isolate it.</p></div>
+    <div><h3>✨ Semantic Search</h3><p>Search by intent, not keywords, across every guide.</p></div>
+  </div>
+</section>
+{% endblock %}
