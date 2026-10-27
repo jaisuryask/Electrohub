@@ -1,0 +1,115 @@
+{% extends "hub/base.html" %}
+{% block title %}{{ p.title }} — ElectroLab{% endblock %}
+{% block projslug %}{{ p.slug }}{% endblock %}
+{% block content %}
+<article class="wrap detail">
+  <nav class="crumbs"><a href="{% url 'home' %}">Home</a> / <a href="{% url 'projects' %}?category={{ p.category.slug }}">{{ p.category.name }}</a> / {{ p.title }}</nav>
+  <header class="d-head2">
+    <div>
+      <div class="meta"><span class="dot {{ p.difficulty }}"></span>{{ p.get_difficulty_display }} · {{ p.board }}</div>
+      <h1>{{ p.title }}</h1>
+      <p class="lead">{{ p.summary }}</p>
+      <div class="facts">
+        <div><b>{{ p.build_minutes }} min</b><span>build time</span></div>
+        <div><b>~${{ p.cost_usd }}</b><span>est. cost</span></div>
+        <div><b>{{ total_parts }}</b><span>parts</span></div>
+        <div><b>{{ code_files|length }}</b><span>code files</span></div>
+      </div>
+      <div class="actions">
+        <a class="btn primary" href="{% url 'bundle' p.slug %}">⬇ Download project (.zip)</a>
+        <button class="btn" id="favBtn" data-slug="{{ p.slug }}">☆ Save</button>
+        <button class="btn" id="printBtn">🖨 Print guide</button>
+      </div>
+    </div>
+    {% if p.youtube_id %}
+    <div class="video" id="video" data-id="{{ p.youtube_id }}" role="button" tabindex="0" aria-label="Play video tutorial">
+      <img src="{{ p.thumbnail }}" alt="Video tutorial thumbnail">
+      <span class="playbtn">▶</span>
+    </div>
+    {% endif %}
+  </header>
+  {% if p.video_credit %}<p class="credit">🎬 Video: {{ p.video_credit }} — hosted on YouTube by its original creator.</p>{% endif %}
+  {% if p.safety_note %}<div class="safety">⚠ {{ p.safety_note }}</div>{% endif %}
+
+  <div class="tabs" role="tablist" id="tabs">
+    <button class="on" data-tab="overview">Overview</button>
+    <button data-tab="parts">Parts</button>
+    <button data-tab="wiring">Wiring</button>
+    <button data-tab="code">Code</button>
+    <button data-tab="steps">Instructions</button>
+    <button data-tab="ai">🤖 AI help</button>
+  </div>
+
+  <section class="pane on" id="overview">
+    <div class="two">
+      <div><h2>About this project</h2><p class="prose">{{ p.description }}</p>
+        <div class="tags big">{% for t in p.tag_list %}<a href="{% url 'projects' %}?q={{ t|urlencode }}">#{{ t }}</a>{% endfor %}</div></div>
+      <aside class="box"><h3>What you'll learn</h3>
+        <ul class="ticks"><li>Wiring {{ p.board }} to real hardware</li><li>Reading &amp; debugging with the Serial Monitor</li><li>Writing clean, commented firmware</li><li>Testing and troubleshooting with AI</li></ul></aside>
+    </div>
+    {% if related %}<h3 class="mt">You might also like</h3><div class="grid">{% for p in related %}{% include "hub/_card.html" %}{% endfor %}</div>{% endif %}
+  </section>
+
+  <section class="pane" id="parts">
+    <h2>Bill of materials</h2>
+    <table class="tbl"><thead><tr><th></th><th>Component</th><th>Qty</th><th>Notes</th></tr></thead><tbody>
+      {% for c in components %}<tr><td><input type="checkbox" class="chk" aria-label="Got it"></td><td>{{ c.name }}</td><td>{{ c.quantity }}</td><td class="muted">{{ c.note }}</td></tr>{% endfor %}
+    </tbody></table>
+    <p class="muted">Tick items as you gather them. Estimated total ≈ ${{ p.cost_usd }}.</p>
+  </section>
+
+  <section class="pane" id="wiring">
+    <h2>Connections</h2>
+    <div class="diagram">{{ diagram }}</div>
+    <table class="tbl"><thead><tr><th>#</th><th>From</th><th>To</th><th>Notes</th></tr></thead><tbody>
+      {% for c in connections %}<tr><td>{{ forloop.counter }}</td>
+        <td><b>{{ c.from_part }}</b> · {{ c.from_pin }}</td>
+        <td><span class="wire" style="background:{{ c.wire_color }}"></span><b>{{ c.to_part }}</b> · {{ c.to_pin }}</td>
+        <td class="muted">{{ c.note }}</td></tr>{% endfor %}
+    </tbody></table>
+  </section>
+
+  <section class="pane" id="code">
+    <h2>Source code</h2>
+    {% for f in code_files %}
+    <div class="code" data-file="{{ f.pk }}">
+      <div class="code-bar">
+        <div><b>{{ f.filename }}</b><span class="muted"> — {{ f.description }}</span></div>
+        <div class="code-act">
+          <button class="btn sm copy">📋 Copy</button>
+          <a class="btn sm" href="{% url 'download_code' f.pk %}">⬇ Download</a>
+          <button class="btn sm ai xplain">✨ Explain with AI</button>
+        </div>
+      </div>
+      <pre><code class="language-{{ f.language }}">{{ f.content }}</code></pre>
+      <div class="explain" hidden></div>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="pane" id="steps">
+    <h2>Step-by-step instructions</h2>
+    <ol class="steps">{% for s in steps %}<li><div class="n">{{ forloop.counter }}</div><div><h3>{{ s.title }}</h3><p>{{ s.body }}</p></div></li>{% endfor %}</ol>
+  </section>
+
+  <section class="pane" id="ai">
+    <div class="two">
+      <div class="box">
+        <h3>🩺 Troubleshoot this build</h3>
+        <p class="muted">Describe what's going wrong — I'll check it against {{ p.title }}.</p>
+        <textarea id="tsText" rows="4" placeholder="e.g. Upload fails with 'Failed to connect to ESP32'"></textarea>
+        <button class="btn primary" id="tsGo">Diagnose</button>
+        <div id="tsOut" class="out"></div>
+      </div>
+      <div class="box">
+        <h3>🤖 Ask about this project</h3>
+        <div class="qchips">
+          <button class="chip">How do I wire it?</button><button class="chip">What parts do I need?</button>
+          <button class="chip">How long does it take?</button><button class="chip">How do I upload the code?</button>
+        </div>
+        <p class="muted">Tap a question to open the assistant, pre-scoped to this project.</p>
+      </div>
+    </div>
+  </section>
+</article>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "hub/base.html" %}
+{% block title %}Projects — ElectroLab{% endblock %}
+{% block content %}
+<section class="wrap sec">
+  <div class="sec-h"><h1 class="h1s">{% if q %}Results for “{{ q }}”{% else %}All projects{% endif %}</h1><span class="muted">{{ projects|length }} found{% if q %} · ranked by AI relevance{% endif %}</span></div>
+  <form class="filters" method="get">
+    <input name="q" value="{{ q }}" placeholder="Search by intent…" aria-label="Search">
+    <select name="category" aria-label="Category"><option value="">All categories</option>
+      {% for c in categories %}<option value="{{ c.slug }}" {% if c.slug == cat %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>
+    <select name="difficulty" aria-label="Difficulty"><option value="">Any level</option>
+      <option value="beginner" {% if diff == "beginner" %}selected{% endif %}>Beginner</option>
+      <option value="intermediate" {% if diff == "intermediate" %}selected{% endif %}>Intermediate</option>
+      <option value="advanced" {% if diff == "advanced" %}selected{% endif %}>Advanced</option></select>
+    <select name="board" aria-label="Board"><option value="">Any board</option>
+      {% for b in boards %}<option value="{{ b }}" {% if b == board %}selected{% endif %}>{{ b }}</option>{% endfor %}</select>
+    <button class="btn primary">Apply</button>
+  </form>
+  {% if projects %}
+  <div class="grid">{% for p in projects %}{% include "hub/_card.html" %}{% endfor %}</div>
+  {% else %}
+  <div class="empty"><h3>No projects matched.</h3><p>Try fewer filters, or ask the <a href="{% url 'ailab' %}">AI Lab</a>.</p></div>
+  {% endif %}
+</section>
+{% endblock %}
