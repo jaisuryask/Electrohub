@@ -36,7 +36,7 @@ in `.env` (see `.env.example`) for faster answers. If all providers fail, a buil
 
 ## API
 
-`GET /api/projects/`, `GET /api/search/?q=`, `POST /api/ai/chat|recommend|troubleshoot/`, `POST /api/ai/explain/<id>/`.
+`GET /api/search/?q=`, `POST /api/ai/chat|recommend|troubleshoot/`, `POST /api/ai/explain/<id>/`.
 
 ## Add projects
 
