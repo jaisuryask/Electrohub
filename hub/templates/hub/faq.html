@@ -1,0 +1,19 @@
+{% extends "hub/base.html" %}
+{% block title %}FAQ — ElectroLab{% endblock %}
+{% block content %}
+<section class="wrap sec narrow">
+  <span class="eyebrow">Help centre</span>
+  <h1 class="h1s">Frequently asked questions</h1>
+  <p class="lead">{{ total }} answers. Can't find yours? <button class="linkbtn" data-ask="I have a question that is not in the FAQ">Ask the assistant</button> or <a href="{% url 'support' %}">open a ticket</a>.</p>
+  <input id="faqFilter" class="faq-filter" type="search" placeholder="Filter questions…" aria-label="Filter FAQs">
+  {% for cat, items in groups.items %}
+  <h2 class="faq-cat">{{ cat }}</h2>
+  {% for f in items %}
+  <details class="faq" data-text="{{ f.question|lower }} {{ f.answer|lower }}">
+    <summary>{{ f.question }}</summary>
+    <p>{{ f.answer }}</p>
+  </details>
+  {% endfor %}
+  {% endfor %}
+</section>
+{% endblock %}

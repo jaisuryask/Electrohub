@@ -1,0 +1,31 @@
+{% extends "hub/base.html" %}
+{% block title %}Support — ElectroLab{% endblock %}
+{% block content %}
+<section class="wrap sec narrow">
+  <span class="eyebrow">Support</span>
+  <h1 class="h1s">Get help</h1>
+  <p class="lead">The assistant opens a ticket automatically when it can't answer. You can also write to us directly.</p>
+  <div class="two lab">
+    <form class="box" method="post">{% csrf_token %}
+      <h3>New support request</h3>
+      {% if created %}<div class="notice ok">Thanks! Your ticket is <b>{{ created }}</b>. Keep this reference to check its status.</div>{% endif %}
+      {% if error %}<div class="notice bad">{{ error }}</div>{% endif %}
+      <label for="q">What do you need help with?</label>
+      <textarea id="q" name="question" rows="5" required minlength="10" maxlength="2000" placeholder="Describe the problem, the board and what you already tried"></textarea>
+      <label for="em">Email <span class="muted">(optional, for a reply)</span></label>
+      <input id="em" name="email" type="email" placeholder="you@example.com">
+      <button class="btn primary">Submit ticket</button>
+    </form>
+    <div class="box">
+      <h3>Check a ticket</h3>
+      <form method="get" class="inline">
+        <input name="ref" placeholder="ELT-0007" value="{{ request.GET.ref }}" aria-label="Ticket reference">
+        <button class="btn">Check</button>
+      </form>
+      {% if found %}<div class="notice ok mt"><b>{{ found.ref }}</b> — status: <b>{{ found.get_status_display }}</b><br><span class="muted">Opened {{ found.created|date:"j M Y, H:i" }} UTC</span></div>{% endif %}
+      {% if notfound %}<div class="notice bad mt">No ticket found for “{{ notfound }}”.</div>{% endif %}
+      <p class="muted mt">Faster: browse the <a href="{% url 'faq' %}">FAQ</a> or the <a href="{% url 'errors' %}">error codes</a>.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

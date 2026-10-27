@@ -1,0 +1,16 @@
+{% extends "hub/base.html" %}
+{% block title %}500 — ElectroLab{% endblock %}
+{% block content %}
+<section class="wrap sec errpage">
+  <div class="bigcode c5">500</div>
+  <h1>Internal server error</h1>
+  <p class="lead">Something broke on our side while building this page. It isn't your fault, and it has been logged.</p>
+  <p><b>What to try:</b> reload in a moment. If it keeps happening, open a support ticket with the address below.</p>
+  {% if path %}<p class="muted">Address: <code>{{ path }}</code></p>{% endif %}
+  <div class="actions c">
+    <button class="btn primary" data-ask="I got a 500 error on {{ path }}. What does it mean and what should I do?">🤖 Ask the assistant</button>
+    <a class="btn" href="{% url 'support' %}">Open a ticket</a>
+    <a class="btn" href="{% url 'home' %}">Go home</a>
+  </div>
+</section>
+{% endblock %}

@@ -11,8 +11,10 @@ if _env.exists():
             _k, _v = _line.split("=", 1)
             os.environ.setdefault(_k.strip(), _v.strip().strip('"').strip("'"))
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-change-me-electrolab")
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY") or ("dev-only-change-me-electrolab" if DEBUG else None)
+if not SECRET_KEY:
+    raise RuntimeError("Set DJANGO_SECRET_KEY in the environment when DEBUG is off.")
 ALLOWED_HOSTS = [h for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "*" if DEBUG else "").split(",") if h]
 CSRF_TRUSTED_ORIGINS = []
 
@@ -40,6 +42,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "hub.middleware.RequestLogMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -90,3 +93,12 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # AI: free providers are tried automatically (Groq/Gemini if their free keys are set, else keyless
 # Pollinations), then the built-in local engine. Set ELECTROLAB_AI=0 to force local-only.
 AI_ENABLED = os.environ.get("ELECTROLAB_AI", "1") == "1"
+
+# Request logging goes to stdout (visible in Render's Logs tab).
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"plain": {"format": "%(asctime)s %(levelname)s %(name)s %(message)s"}},
+    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "plain"}},
+    "loggers": {"electrolab.request": {"handlers": ["console"], "level": "INFO", "propagate": False}},
+}

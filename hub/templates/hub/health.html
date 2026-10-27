@@ -1,0 +1,19 @@
+{% extends "hub/base.html" %}
+{% block title %}Health — ElectroLab{% endblock %}
+{% block content %}
+<section class="wrap sec narrow">
+  <span class="eyebrow">System status</span>
+  <h1 class="h1s">Health check <span class="state {{ d.status }}">{{ d.status }}</span></h1>
+  <p class="lead">Uptime {{ d.uptime_seconds }} s · machine-readable version: <a href="?format=json">?format=json</a></p>
+  <div class="checks">
+    {% for name, c in d.checks.items %}
+    <div class="check"><span class="dotc {% if c.ok %}up{% else %}down{% endif %}"></span><div><b>{{ name }}</b><small>{{ c.detail }}</small></div></div>
+    {% endfor %}
+  </div>
+  <h2 class="faq-cat">Requests since start</h2>
+  <p>Total {{ d.requests.total }} · 2xx {{ d.requests.2xx }} · 3xx {{ d.requests.3xx }} · 4xx {{ d.requests.4xx }} · 5xx {{ d.requests.5xx }}</p>
+  <table class="tbl"><thead><tr><th>Time</th><th>Method</th><th>Path</th><th>Status</th><th>ms</th></tr></thead><tbody>
+    {% for r in recent %}<tr><td>{{ r.t }}</td><td>{{ r.m }}</td><td>{{ r.p }}</td><td>{{ r.s }}</td><td>{{ r.ms }}</td></tr>{% empty %}<tr><td colspan="5" class="muted">No requests yet.</td></tr>{% endfor %}
+  </tbody></table>
+</section>
+{% endblock %}

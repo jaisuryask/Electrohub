@@ -110,28 +110,70 @@
     }, 300);
   });
 
-  // chat widget
-  const chat = $("#chat"), msgs = $("#chatMsgs"), input = $("#chatInput"); let chatHist = store.get("chat", []);
+  // FAQ filter
+  const ff = $("#faqFilter");
+  ff?.addEventListener("input", () => {
+    const q = ff.value.toLowerCase().trim();
+    $$(".faq").forEach((d) => (d.hidden = q && !d.dataset.text.includes(q)));
+  });
+
+  // ---- chat widget (FAQ + error-code assistant, feedback, tickets)
+  const chat = $("#chat"), msgs = $("#chatMsgs"), input = $("#chatInput");
+  const sid = store.get("sid", null) || (() => { const v = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)); store.set("sid", v); return v; })();
+  let chatHist = store.get("chat", []);
   const add = (cls, html) => { const d = document.createElement("div"); d.className = "m " + cls; d.innerHTML = html; msgs.append(d); msgs.scrollTop = msgs.scrollHeight; return d; };
-  const chipsFor = EL.project ? ["How do I wire it?", "What parts do I need?", "How do I upload the code?"] : ["Best beginner project?", "Which project uses a camera?", "How do I measure distance?"];
+  const chipsFor = EL.project ? ["How do I wire it?", "What parts do I need?", "How long does it take?"] : ["What is ElectroLab?", "What does error 404 mean?", "Which project uses a camera?"];
   $("#chatChips").innerHTML = chipsFor.map((c) => `<button class="chip" type="button">${c}</button>`).join("");
-  if (!chatHist.length) chatHist = [{ role: "assistant", content: "Hi! I'm ElectroLab AI. Ask about wiring, parts, code or troubleshooting." }];
+  if (!chatHist.length) chatHist = [{ role: "assistant", content: "Hi! Ask me a question, paste an error code (like **404**), or ask about any project." }];
   chatHist.forEach((m) => add(m.role === "user" ? "u" : "b", md(m.content)));
-  const openChat = (q) => { chat.hidden = false; input.focus(); if (q) send(q); };
+
+  function feedbackRow(node, logId) {
+    const row = document.createElement("div"); row.className = "fb";
+    row.innerHTML = '<span class="muted" style="font-size:.78rem">Helpful?</span><button type="button" data-r="up" aria-label="Helpful">👍</button><button type="button" data-r="down" aria-label="Not helpful">👎</button>';
+    row.addEventListener("click", async (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      $$("button", row).forEach((x) => x.classList.toggle("sel", x === b));
+      await post("/api/ai/feedback/", { log_id: logId, rating: b.dataset.r, session: sid }).catch(() => {});
+      toast("Thanks for the feedback");
+    });
+    node.append(row);
+  }
+  function ticketRow(node, ref) {
+    const row = document.createElement("form"); row.className = "tk";
+    row.innerHTML = '<input type="email" placeholder="your@email (optional)" aria-label="Email"><button>Save</button>';
+    row.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const d = await post("/api/ai/ticket-email/", { ref, email: $("input", row).value });
+      row.innerHTML = d.ok ? "<span class='muted'>Email saved ✓</span>" : `<span class='miss'>${esc(d.error || "Could not save")}</span>`;
+    });
+    node.append(row);
+  }
+
   async function send(q) {
+    chat.hidden = false;
     add("u", esc(q)); chatHist.push({ role: "user", content: q });
     const wait = add("b", "<span class='dots'><span></span><span></span><span></span></span>");
     try {
-      const d = await post("/api/ai/chat/", { message: q, project: EL.project, history: chatHist.slice(0, -1) });
-      wait.innerHTML = md(d.answer || d.error) + (d.related?.length ? "<br><br>" + d.related.map((r) => `<a href="${r.url}">→ ${esc(r.title)}</a>`).join("<br>") : "");
-      chatHist.push({ role: "assistant", content: d.answer || "" });
-    } catch { wait.textContent = "Network error — try again."; }
+      const r = await fetch("/api/ai/chat/", { method: "POST", headers: { "Content-Type": "application/json", "X-CSRFToken": EL.csrf },
+        body: JSON.stringify({ message: q, project: EL.project, session: sid, page: location.pathname, history: chatHist.slice(0, -1) }) });
+      const d = await r.json();
+      if (r.status === 429) { wait.innerHTML = "⏳ " + esc(d.error) + " (error 429)"; return; }
+      if (!r.ok) { wait.innerHTML = esc(d.error || "Something went wrong") + ` (error ${r.status})`; return; }
+      wait.innerHTML = md(d.answer) + (d.related?.length ? "<br><br>" + d.related.map((x) => `<a href="${x.url}">→ ${esc(x.title)}</a>`).join("<br>") : "");
+      if (d.ticket) ticketRow(wait, d.ticket);
+      if (d.log_id) feedbackRow(wait, d.log_id);
+      chatHist.push({ role: "assistant", content: d.answer });
+    } catch { wait.textContent = "Network error - please try again."; }
+    msgs.scrollTop = msgs.scrollHeight;
     store.set("chat", chatHist.slice(-20));
   }
-  $("#chatFab").addEventListener("click", () => (chat.hidden = !chat.hidden));
+  const openChat = (q) => { chat.hidden = false; if (q) send(q); else input.focus(); };
+  $("#chatFab").addEventListener("click", () => { chat.hidden = !chat.hidden; if (!chat.hidden) input.focus(); });
   $("#chatClose").addEventListener("click", () => (chat.hidden = true));
   $("#openChat")?.addEventListener("click", () => openChat());
   $("#chatForm").addEventListener("submit", (e) => { e.preventDefault(); const q = input.value.trim(); if (q) { input.value = ""; send(q); } });
   $$(".chip", $("#chatChips")).forEach((c) => c.addEventListener("click", () => send(c.textContent)));
   $$(".qchips .chip").forEach((c) => c.addEventListener("click", () => openChat(c.textContent)));
+  // any element with data-ask opens the assistant with that question (used on 404/500, FAQ, error pages)
+  document.addEventListener("click", (e) => { const b = e.target.closest("[data-ask]"); if (b) openChat(b.dataset.ask); });
 })();
