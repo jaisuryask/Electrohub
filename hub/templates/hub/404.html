@@ -1,0 +1,15 @@
+{% extends "hub/base.html" %}
+{% block title %}{{ code }} — ElectroLab{% endblock %}
+{% block content %}
+<section class="wrap sec errpage">
+  <div class="bigcode">{{ code }}</div>
+  <h1>{% if ec %}{{ ec.title }}{% else %}Something went wrong{% endif %}</h1>
+  {% if ec %}<p class="lead">{{ ec.meaning }}</p><p><b>How to fix:</b> {{ ec.fix }}</p>{% endif %}
+  {% if path %}<p class="muted">Address: <code>{{ path }}</code>{% if ec and ec.code|slice:":3" == "EL-" %} · site code <code>{{ ec.code }}</code>{% endif %}</p>{% endif %}
+  <div class="actions c">
+    <button class="btn primary" data-ask="I got a {{ code }} error on {{ path }}. What does it mean and what should I do?">🤖 Ask the assistant</button>
+    <a class="btn" href="{% url 'home' %}">Go home</a>
+    <a class="btn" href="{% url 'projects' %}">Browse projects</a>
+  </div>
+</section>
+{% endblock %}

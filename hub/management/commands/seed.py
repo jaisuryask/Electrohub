@@ -1,7 +1,8 @@
 from django.core.management.base import BaseCommand
 
+from hub import faq_data as fd
 from hub import seed_data as sd
-from hub.models import Category, CodeFile, Component, Connection, Project, Step
+from hub.models import FAQ, Category, CodeFile, Component, Connection, ErrorCode, Project, Step
 
 
 class Command(BaseCommand):
@@ -31,4 +32,10 @@ class Command(BaseCommand):
             for i, (fn, lang, desc, content) in enumerate(d["code"]):
                 CodeFile.objects.create(project=p, order=i, filename=fn, language=lang,
                                         description=desc, content=content)
-        self.stdout.write(self.style.SUCCESS(f"Seeded {len(sd.PROJECTS)} projects."))
+        for i, (cat, q, a, kw) in enumerate(fd.FAQS):
+            FAQ.objects.update_or_create(question=q, defaults=dict(category=cat, answer=a, keywords=kw, order=i))
+        for code, title, meaning, fix, status in fd.ERROR_CODES:
+            ErrorCode.objects.update_or_create(code=code, defaults=dict(
+                title=title, meaning=meaning, fix=fix, http_status=status))
+        self.stdout.write(self.style.SUCCESS(
+            f"Seeded {len(sd.PROJECTS)} projects, {len(fd.FAQS)} FAQs, {len(fd.ERROR_CODES)} error codes."))

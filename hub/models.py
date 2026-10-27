@@ -108,6 +108,56 @@ class Step(models.Model):
         ordering = ["order", "id"]
 
 
+class FAQ(models.Model):
+    question = models.CharField(max_length=200)
+    answer = models.TextField()
+    category = models.CharField(max_length=40, default="General")
+    keywords = models.CharField(max_length=200, blank=True, help_text="extra search words, comma separated")
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["category", "order", "id"]
+        verbose_name = "FAQ"
+
+    def __str__(self):
+        return self.question
+
+
+class ErrorCode(models.Model):
+    code = models.CharField(max_length=12, unique=True, help_text="HTTP status (404) or site code (EL-1001)")
+    title = models.CharField(max_length=80)
+    meaning = models.TextField()
+    fix = models.TextField()
+    http_status = models.PositiveIntegerField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["code"]
+
+    def __str__(self):
+        return f"{self.code} {self.title}"
+
+
+class Ticket(models.Model):
+    STATUS = [("open", "Open"), ("in_progress", "In progress"), ("closed", "Closed")]
+    question = models.TextField()
+    email = models.EmailField(blank=True)
+    source = models.CharField(max_length=20, default="chat")
+    session_id = models.CharField(max_length=64, blank=True)
+    page = models.CharField(max_length=200, blank=True)
+    status = models.CharField(max_length=12, choices=STATUS, default="open")
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created"]
+
+    @property
+    def ref(self):
+        return f"ELT-{self.pk:04d}"
+
+    def __str__(self):
+        return f"{self.ref}: {self.question[:50]}"
+
+
 class AIQuery(models.Model):
     """Lightweight log of AI usage (shown in admin; helps tune the knowledge base)."""
 

@@ -28,7 +28,7 @@
     </div>
     {% endif %}
   </header>
-  {% if p.video_credit %}<p class="credit">🎬 Video: {{ p.video_credit }} — hosted on YouTube by its original creator.</p>{% endif %}
+  {% if video.title or p.video_credit %}<p class="credit">🎬 Video: {{ video.title|default:p.video_credit }}{% if video.author %} — by {{ video.author }}{% endif %} (hosted on YouTube){% if video.source == "fallback" %} <span class="muted">· details from saved credit</span>{% endif %}</p>{% endif %}
   {% if p.safety_note %}<div class="safety">⚠ {{ p.safety_note }}</div>{% endif %}
 
   <div class="tabs" role="tablist" id="tabs">

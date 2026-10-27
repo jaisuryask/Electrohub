@@ -1,0 +1,22 @@
+{% extends "hub/base.html" %}
+{% block title %}Error codes — ElectroLab{% endblock %}
+{% block content %}
+<section class="wrap sec narrow">
+  <span class="eyebrow">Reference</span>
+  <h1 class="h1s">Error codes explained</h1>
+  <p class="lead">HTTP errors you may meet, plus ElectroLab's own <code>EL-</code> codes. Paste any code into the assistant for a plain-English explanation.</p>
+  <div class="codes">
+    {% for c in codes %}
+    <article class="codecard" id="e{{ c.code }}">
+      <div class="codebadge {% if c.http_status >= 500 %}c5{% elif c.http_status >= 400 %}c4{% else %}cx{% endif %}">{{ c.code }}</div>
+      <div>
+        <h3>{{ c.title }}</h3>
+        <p><b>Meaning:</b> {{ c.meaning }}</p>
+        <p><b>How to fix:</b> {{ c.fix }}</p>
+        <button class="linkbtn" data-ask="What does error {{ c.code }} mean?">Ask the assistant about {{ c.code }}</button>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

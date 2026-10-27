@@ -3,12 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#ffffff">
 <title>{% block title %}ElectroLab — Embedded & IoT Projects{% endblock %}</title>
 <meta name="description" content="Embedded systems and IoT projects with wiring diagrams, copy-and-download code, videos and an AI mentor.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2310b981'/><path d='M36 8 18 36h12l-4 20 20-30H34z' fill='%230b1220'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
 <link rel="stylesheet" href="{% static 'hub/style.css' %}">
 </head>
 <body>
@@ -19,6 +20,9 @@
     <nav class="links" id="links">
       <a href="{% url 'projects' %}">Projects</a>
       <a href="{% url 'ailab' %}">AI Lab <span class="pill">AI</span></a>
+      <a href="{% url 'faq' %}">FAQ</a>
+      <a href="{% url 'errors' %}">Error codes</a>
+      <a href="{% url 'support' %}">Support</a>
     </nav>
     <form class="search" action="{% url 'projects' %}" role="search" autocomplete="off">
       <input id="navsearch" name="q" type="search" placeholder="Search: “measure distance with beeper”…" aria-label="Search projects">
@@ -34,7 +38,7 @@
   <div class="wrap foot-in">
     <div><a class="brand" href="{% url 'home' %}"><span class="bolt">⚡</span><span>Electro<b>Lab</b></span></a>
       <p>Open embedded-systems &amp; IoT projects. Build, learn, ship.</p></div>
-    <div><h4>Explore</h4><a href="{% url 'projects' %}">All projects</a><a href="{% url 'ailab' %}">AI Lab</a><a href="/admin/">Admin</a></div>
+    <div><h4>Explore</h4><a href="{% url 'projects' %}">All projects</a><a href="{% url 'ailab' %}">AI Lab</a><a href="{% url 'faq' %}">FAQ</a><a href="{% url 'errors' %}">Error codes</a><a href="{% url 'support' %}">Support</a><a href="{% url 'health' %}">Health</a></div>
     <div><h4>AI engine</h4><p>{% if AI_LIVE %}Free AI model connected (server-side).{% else %}Local engine active.{% endif %}</p></div>
   </div>
 </footer>

@@ -11,7 +11,10 @@ import json
 import math
 import os
 import re
+import time
+import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from collections import Counter
 
 from django.conf import settings
@@ -124,6 +127,11 @@ OPENAI_STYLE = {
 }
 
 
+LLM_TIMEOUT = 15   # seconds per provider
+_pool = ThreadPoolExecutor(max_workers=8)
+_cooldown = {}
+
+
 def llm_available():
     return settings.AI_ENABLED
 
@@ -131,8 +139,11 @@ def llm_available():
 def _post(url, payload, headers):
     req = urllib.request.Request(url, data=json.dumps(payload).encode(),
                                  headers={"content-type": "application/json", "user-agent": "ElectroLab/1.0", **headers})
-    with urllib.request.urlopen(req, timeout=25) as r:
-        return json.load(r)
+    def go():
+        with urllib.request.urlopen(req, timeout=LLM_TIMEOUT) as r:
+            return json.load(r)
+
+    return _pool.submit(go).result(timeout=LLM_TIMEOUT)   # hard wall-clock limit
 
 
 def _call_openai_style(name, system, messages, max_tokens):
@@ -151,10 +162,15 @@ def _call_openai_style(name, system, messages, max_tokens):
 def call_llm(system, messages, max_tokens=700):
     """Returns (text, provider) or (None, "local") when every provider fails."""
     for name in ("groq", "gemini", "pollinations"):
+        if _cooldown.get(name, 0) > time.time():
+            continue
         try:
             text = _call_openai_style(name, system, messages, max_tokens)
             if text:
                 return text, name
+        except urllib.error.HTTPError as exc:
+            if exc.code in (402, 429):      # provider's free limit hit: skip it for 30 s
+                _cooldown[name] = time.time() + 30
         except Exception:
             continue
     return None, "local"
@@ -205,9 +221,12 @@ def ask(question, project=None, history=None):
     return local_answer(question, project, related), "local", related
 
 
-def local_answer(q, project, related):
+def local_answer(q, project, related, strict=False):
+    """strict=True returns None instead of a generic reply when no intent matched."""
     ql = q.lower()
     if not project and not related:
+        if strict:
+            return None
         return ("I couldn't find a matching project. Try describing sensors or boards, e.g. "
                 "“temperature monitor with ESP32” — or use the Part-Finder in the AI Lab.")
     p = project or related[0]
@@ -234,6 +253,8 @@ def local_answer(q, project, related):
     if not project and len(related) > 1:
         names = "\n".join(f"• **{r.title}** — {r.summary}" for r in related)
         return f"These projects look relevant:\n{names}"
+    if strict:
+        return None
     return f"**{p.title}** — {p.summary}"
 
 
