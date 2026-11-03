@@ -56,12 +56,22 @@
     });
     $(".xplain", box).addEventListener("click", async (e) => {
       const out = $("div.explain", box), btn = e.currentTarget;
-      out.hidden = false; out.innerHTML = "<span class='dots'><span></span><span></span><span></span></span> Analysing…"; btn.disabled = true;
-      const d = await post(`/api/ai/explain/${box.dataset.file}/`);
-      btn.disabled = false;
-      out.innerHTML = `<b>${esc(d.summary)}</b><span class="tag-engine">${d.engine}</span>` +
-        (d.llm ? `<p>${md(d.llm)}</p>` : "") +
-        `<table>${d.notes.map((n) => `<tr><td>L${n.line}</td><td><code>${esc(n.code)}</code>${md(n.text)}</td></tr>`).join("")}</table>`;
+      const label = btn.textContent;
+      out.hidden = false; out.innerHTML = "<span class='dots'><span></span><span></span><span></span></span> Analysing the code…";
+      btn.disabled = true; btn.textContent = "⏳ Analysing…";
+      out.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      try {
+        const r = await fetch(`/api/ai/explain/${box.dataset.file}/`, { method: "POST", headers: { "Content-Type": "application/json", "X-CSRFToken": EL.csrf }, body: "{}" });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || `Error ${r.status}`);
+        out.innerHTML = `<b>${esc(d.summary)}</b><span class="tag-engine">${d.engine}</span>` +
+          (d.llm ? `<p>${md(d.llm)}</p>` : "") +
+          `<table>${d.notes.map((n) => `<tr><td>L${n.line}</td><td><code>${esc(n.code)}</code>${md(n.text)}</td></tr>`).join("")}</table>`;
+      } catch (err) {
+        out.innerHTML = `<span class="miss">Could not explain this code (${esc(err.message)}). Please try again in a moment.</span>`;
+      }
+      btn.disabled = false; btn.textContent = label;
+      out.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
 
