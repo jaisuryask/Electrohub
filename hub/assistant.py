@@ -77,7 +77,7 @@ def explain_error(message):
 
 def _create_ticket(message, session, page):
     t = Ticket.objects.create(question=message, session_id=(session or "")[:64], page=(page or "")[:200], source="chat")
-    return t.ref
+    return t.ref, t.token
 
 
 def respond(message, project=None, session="", history=None, page=""):
@@ -129,8 +129,8 @@ def respond(message, project=None, session="", history=None, page=""):
             note = "\n\n_EL-2001: the AI model was unavailable, so the built-in engine answered._" if ai.llm_available() else ""
             return {**base, "source": "project", "answer": local + note, "related": [] if project else _links(related)}
 
-    ref = _create_ticket(msg, session, page)
-    return {**base, "source": "ticket", "ticket": ref, "answer":
+    ref, token = _create_ticket(msg, session, page)
+    return {**base, "source": "ticket", "ticket": ref, "ticket_token": token, "answer":
             f"I couldn't find a reliable answer to that, so I created support ticket **{ref}**. "
             "Add your email below if you'd like a reply, or track it on the Support page."}
 

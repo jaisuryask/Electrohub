@@ -66,6 +66,18 @@ Copy `.env.example` to `.env` to set `MONGODB_URI` and optional AI keys.
 Push to `main`; `render.yaml` + `build.sh` handle the build. Under **Environment** add `MONGODB_URI`
 (free MongoDB Atlas cluster) and optionally `GROQ_API_KEY` / `GEMINI_API_KEY`. `DJANGO_SECRET_KEY` is generated.
 
+## API
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/faqs/?q=` | FAQs from SQL (the FAQ page loads from this) |
+| `GET /api/error-codes/` | Error codes from SQL |
+| `POST /api/tickets/` | **Create** a ticket → returns `ref` and a secret `token` |
+| `GET /api/tickets/<ref>/` | **Read** (header `X-Ticket-Token`) |
+| `PATCH /api/tickets/<ref>/` | **Update** email/question (needs token) |
+| `DELETE /api/tickets/<ref>/` | **Delete** (needs token) |
+| `POST /api/ai/chat/`, `/recommend/`, `/troubleshoot/`, `/explain/<id>/`, `/feedback/` | AI assistant (rate limited, 20/min/IP → 429) |
+| `GET /health/?format=json` | Health check |
+
 ## Backend map
 `hub/models.py` data · `hub/views.py` pages + JSON API · `hub/assistant.py` support assistant ·
 `hub/ai.py` AI providers + project search · `hub/mongo.py` MongoDB · `hub/middleware.py` request log + rate limit ·

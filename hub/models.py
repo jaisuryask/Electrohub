@@ -1,3 +1,5 @@
+import secrets
+
 from django.db import models
 from django.urls import reverse
 
@@ -145,6 +147,7 @@ class Ticket(models.Model):
     session_id = models.CharField(max_length=64, blank=True)
     page = models.CharField(max_length=200, blank=True)
     status = models.CharField(max_length=12, choices=STATUS, default="open")
+    token = models.CharField(max_length=32, default=secrets.token_hex, editable=False)
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:

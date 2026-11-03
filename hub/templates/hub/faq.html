@@ -6,6 +6,7 @@
   <h1 class="h1s">Frequently asked questions</h1>
   <p class="lead">{{ total }} answers. Can't find yours? <button class="linkbtn" data-ask="I have a question that is not in the FAQ">Ask the assistant</button> or <a href="{% url 'support' %}">open a ticket</a>.</p>
   <input id="faqFilter" class="faq-filter" type="search" placeholder="Filter questions…" aria-label="Filter FAQs">
+  <div id="faqList" aria-live="polite">
   {% for cat, items in groups.items %}
   <h2 class="faq-cat">{{ cat }}</h2>
   {% for f in items %}
@@ -15,5 +16,6 @@
   </details>
   {% endfor %}
   {% endfor %}
+  </div>
 </section>
 {% endblock %}

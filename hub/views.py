@@ -11,6 +11,7 @@ from django.db.models import F
 from django.http import HttpResponse, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils.safestring import mark_safe
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from . import ai, assistant, integrations, mongo
@@ -150,18 +151,99 @@ def api_feedback(request):
     return JsonResponse({"ok": True, "store": store})
 
 
+def _ticket_json(t, full=False):
+    d = {"ref": t.ref, "status": t.status, "created": t.created.isoformat()}
+    if full:
+        d.update(question=t.question, email=t.email, source=t.source)
+    return d
+
+
+def _ticket_from(request, ref):
+    """Look a ticket up by ref and verify its secret token (header X-Ticket-Token or ?token=)."""
+    try:
+        t = Ticket.objects.get(pk=int(str(ref).upper().replace("ELT-", "")))
+    except (ValueError, Ticket.DoesNotExist):
+        return None, JsonResponse({"error": "Ticket not found.", "code": "404"}, status=404)
+    token = request.headers.get("X-Ticket-Token") or request.GET.get("token", "")
+    if not token or token != t.token:
+        return None, JsonResponse({"error": "Missing or wrong ticket token.", "code": "401"}, status=401)
+    return t, None
+
+
+@csrf_exempt  # API-style endpoint: protected by the per-ticket secret token and the rate limiter
+def api_tickets(request):
+    """POST /api/tickets/ -> create a ticket (CRUD: Create)."""
+    if request.method != "POST":
+        return JsonResponse({"error": "Use POST", "code": "400"}, status=405)
+    d = _body(request)
+    question = str(d.get("question", "")).strip()[:2000]
+    email = str(d.get("email", "")).strip()
+    if len(question) < 10:
+        return JsonResponse({"error": "question must be at least 10 characters", "code": "400"}, status=400)
+    try:
+        if email:
+            validate_email(email)
+    except ValidationError:
+        return JsonResponse({"error": "invalid email", "code": "400"}, status=400)
+    t = Ticket.objects.create(question=question, email=email, source="api")
+    return JsonResponse({**_ticket_json(t), "token": t.token}, status=201)
+
+
+@csrf_exempt
+def api_ticket(request, ref):
+    """GET (Read) / PATCH (Update email) / DELETE /api/tickets/<ref>/?token=... """
+    t, err = _ticket_from(request, ref)
+    if err:
+        return err
+    if request.method == "GET":
+        return JsonResponse(_ticket_json(t, full=True))
+    if request.method in ("PATCH", "PUT"):
+        d = _body(request)
+        if "email" in d:
+            try:
+                validate_email(d["email"])
+            except ValidationError:
+                return JsonResponse({"error": "invalid email", "code": "400"}, status=400)
+            t.email = d["email"]
+        if "question" in d and len(str(d["question"]).strip()) >= 10:
+            t.question = str(d["question"]).strip()[:2000]
+        t.save()
+        return JsonResponse(_ticket_json(t, full=True))
+    if request.method == "DELETE":
+        t.delete()
+        return JsonResponse({"deleted": True})
+    return JsonResponse({"error": "Method not allowed", "code": "400"}, status=405)
+
+
 @require_POST
 def api_ticket_email(request):
+    """Used by the chat widget: add an email to the ticket the chat just created."""
     d = _body(request)
-    ref = str(d.get("ref", "")).upper().replace("ELT-", "")
+    t, err = _ticket_from(request, d.get("ref", ""))
+    if err:
+        return JsonResponse({"error": "Could not save email.", "code": "400"}, status=400)
     try:
         validate_email(d.get("email", ""))
-        ticket = Ticket.objects.get(pk=int(ref))
-    except (ValidationError, ValueError, Ticket.DoesNotExist):
-        return JsonResponse({"error": "Enter a valid email and ticket reference.", "code": "400"}, status=400)
-    ticket.email = d["email"]
-    ticket.save(update_fields=["email"])
+    except ValidationError:
+        return JsonResponse({"error": "Enter a valid email.", "code": "400"}, status=400)
+    t.email = d["email"]
+    t.save(update_fields=["email"])
     return JsonResponse({"ok": True})
+
+
+def api_faqs(request):
+    """GET /api/faqs/?q=text  -> FAQs stored in SQL (used by the FAQ page)."""
+    qs = FAQ.objects.all()
+    q = request.GET.get("q", "").strip().lower()
+    data = [{"id": f.id, "category": f.category, "question": f.question, "answer": f.answer}
+            for f in qs if not q or q in (f.question + " " + f.answer + " " + f.keywords).lower()]
+    return JsonResponse({"count": len(data), "faqs": data})
+
+
+def api_error_codes(request):
+    """GET /api/error-codes/ -> error codes stored in SQL."""
+    return JsonResponse({"codes": [{"code": e.code, "title": e.title, "meaning": e.meaning, "fix": e.fix}
+                                   for e in ErrorCode.objects.all()]})
 
 
 @require_POST

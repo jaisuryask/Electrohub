@@ -27,7 +27,8 @@ class RequestLogMiddleware:
     def __call__(self, request):
         start = time.perf_counter()
         ip = client_ip(request)
-        limited = request.path.startswith("/api/ai/") and request.method == "POST" and self._limited(ip)
+        limited = (request.path.startswith(("/api/ai/", "/api/tickets")) and request.method in ("POST", "PATCH", "PUT", "DELETE")
+                   and self._limited(ip))
         if limited:
             response = JsonResponse({"error": "Too many requests - please wait a minute.", "code": "429"}, status=429)
             response["Retry-After"] = str(RATE_WINDOW)

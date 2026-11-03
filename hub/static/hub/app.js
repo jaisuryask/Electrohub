@@ -110,12 +110,20 @@
     }, 300);
   });
 
-  // FAQ filter
-  const ff = $("#faqFilter");
-  ff?.addEventListener("input", () => {
-    const q = ff.value.toLowerCase().trim();
-    $$(".faq").forEach((d) => (d.hidden = q && !d.dataset.text.includes(q)));
-  });
+  // FAQ page: load the FAQs from the JSON API (/api/faqs/); server-rendered list stays as the no-JS fallback
+  const faqList = $("#faqList"), ff = $("#faqFilter");
+  async function loadFaqs(q) {
+    try {
+      const d = await fetch("/api/faqs/?q=" + encodeURIComponent(q || "")).then((r) => r.json());
+      let cat = "", html = "";
+      d.faqs.forEach((f) => {
+        if (f.category !== cat) { cat = f.category; html += `<h2 class="faq-cat">${esc(cat)}</h2>`; }
+        html += `<details class="faq"><summary>${esc(f.question)}</summary><p>${esc(f.answer)}</p></details>`;
+      });
+      faqList.innerHTML = html || "<p class='muted'>No FAQs match your search.</p>";
+    } catch { /* keep the server-rendered fallback */ }
+  }
+  if (faqList) { loadFaqs(""); let ft; ff?.addEventListener("input", () => { clearTimeout(ft); ft = setTimeout(() => loadFaqs(ff.value.trim()), 200); }); }
 
   // ---- chat widget (FAQ + error-code assistant, feedback, tickets)
   const chat = $("#chat"), msgs = $("#chatMsgs"), input = $("#chatInput");
@@ -138,12 +146,15 @@
     });
     node.append(row);
   }
-  function ticketRow(node, ref) {
+  function ticketRow(node, ref, token) {
     const row = document.createElement("form"); row.className = "tk";
     row.innerHTML = '<input type="email" placeholder="your@email (optional)" aria-label="Email"><button>Save</button>';
     row.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const d = await post("/api/ai/ticket-email/", { ref, email: $("input", row).value });
+      const r = await fetch("/api/ai/ticket-email/", { method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": EL.csrf, "X-Ticket-Token": token || "" },
+        body: JSON.stringify({ ref, email: $("input", row).value }) });
+      const d = await r.json();
       row.innerHTML = d.ok ? "<span class='muted'>Email saved ✓</span>" : `<span class='miss'>${esc(d.error || "Could not save")}</span>`;
     });
     node.append(row);
@@ -160,7 +171,7 @@
       if (r.status === 429) { wait.innerHTML = "⏳ " + esc(d.error) + " (error 429)"; return; }
       if (!r.ok) { wait.innerHTML = esc(d.error || "Something went wrong") + ` (error ${r.status})`; return; }
       wait.innerHTML = md(d.answer) + (d.related?.length ? "<br><br>" + d.related.map((x) => `<a href="${x.url}">→ ${esc(x.title)}</a>`).join("<br>") : "");
-      if (d.ticket) ticketRow(wait, d.ticket);
+      if (d.ticket) ticketRow(wait, d.ticket, d.ticket_token);
       if (d.log_id) feedbackRow(wait, d.log_id);
       chatHist.push({ role: "assistant", content: d.answer });
     } catch { wait.textContent = "Network error - please try again."; }
