@@ -121,7 +121,7 @@ def recommend(owned_text):
 #   -> pollinations (free, no key) -> local engine.
 # Keys are read from the server environment / .env only; the browser talks to our /api/ai/* endpoints.
 OPENAI_STYLE = {
-    "groq": ("https://api.groq.com/openai/v1/chat/completions", "GROQ_API_KEY", "GROQ_MODEL", "llama-3.3-70b-versatile"),
+    "groq": ("https://api.groq.com/openai/v1/chat/completions", "GROQ_API_KEY", "GROQ_MODEL", "openai/gpt-oss-20b"),
     "gemini": ("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", "GEMINI_API_KEY", "GEMINI_MODEL", "gemini-2.0-flash"),
     "pollinations": ("https://text.pollinations.ai/openai", None, "POLLINATIONS_MODEL", "openai"),
 }
@@ -154,8 +154,12 @@ def _call_openai_style(name, system, messages, max_tokens):
         if not key:
             raise RuntimeError("no key")
         headers["authorization"] = "Bearer " + key
-    data = _post(url, {"model": os.environ.get(model_env, default_model), "max_tokens": max_tokens,
-                       "messages": [{"role": "system", "content": system}] + messages}, headers)
+    model = os.environ.get(model_env, default_model)
+    payload = {"model": model, "max_tokens": max_tokens, "messages": [{"role": "system", "content": system}] + messages}
+    if name == "groq" and "gpt-oss" in model:
+        payload["reasoning_effort"] = "low"          # reasoning tokens count towards max_tokens
+        payload["max_tokens"] = max(max_tokens, 1200)
+    data = _post(url, payload, headers)
     return data["choices"][0]["message"]["content"].strip()
 
 
